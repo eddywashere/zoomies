@@ -1,6 +1,8 @@
 import type { ReactElement } from "react";
 import { GetServerSidePropsContext } from "next";
 import { useSession } from "next-auth/react";
+import Calendar from "../components/calendar";
+
 import withAuth from "../utils/with-auth";
 import { getLayout } from "../components/layout/dashboard";
 import UIPage from "../components/ui/page";
@@ -15,17 +17,8 @@ export default function Page() {
 
     return (
         <UIPage>
-            <UIPage.Header title="Page Title">
-                <div className="prose prose-blue prose-sm my-6">
-                    <p>placeholder</p>
-                </div>
-            </UIPage.Header>
             <UIPage.Body>
-                <UIPage.Section title="Page Section Title">
-                    <div className="prose prose-blue prose-sm">
-                        <p>placeholder</p>
-                    </div>
-                </UIPage.Section>
+                <Calendar />
             </UIPage.Body>
         </UIPage>
     );
