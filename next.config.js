@@ -2,9 +2,9 @@
 const nextConfig = {
     reactStrictMode: true,
 };
-
+const withImages = require("next-images");
 const { withGlobalCss } = require("next-global-css");
 
 const withConfig = withGlobalCss();
 
-module.exports = withConfig(nextConfig);
+module.exports = withConfig(withImages(nextConfig));

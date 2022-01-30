@@ -1,9 +1,9 @@
-import FullCalendar from "@fullcalendar/react";
+import FullCalendar, { type CalendarOptions } from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { useRef } from "react";
 
-const Calendar = (props = {}) => {
+const Calendar = (props: CalendarOptions) => {
     const calendarRef = useRef(null);
 
     return (
