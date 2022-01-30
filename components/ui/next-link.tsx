@@ -12,4 +12,6 @@ const NextLink = forwardRef((props: any, ref) => {
     );
 });
 
+NextLink.displayName = "NextLink";
+
 export default NextLink;
