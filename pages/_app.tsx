@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import type { AppProps } from "next/app";
 import type { NextPage } from "next";
 import { SessionProvider } from "next-auth/react";
+import { Toaster } from "react-hot-toast";
 
 type NextPageWithLayout = NextPage & {
     getLayout?: (page: ReactElement) => ReactNode;
@@ -24,6 +25,7 @@ export default function Application({ Component, pageProps }: AppPropsWithLayout
             // Provider options are not required but can be useful in situations where
             // you have a short session maxAge time. Shown here with default values.
             session={pageProps.session}>
+            <Toaster />
             {getLayout(<Component {...pageProps} />)}
         </SessionProvider>
     );
