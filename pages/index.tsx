@@ -1,6 +1,9 @@
+import type { ReactElement } from "react";
 import { GetServerSidePropsContext } from "next";
 import { useSession } from "next-auth/react";
 import withAuth from "../utils/with-auth";
+import { getLayout } from "../components/layout/dashboard";
+import UIPage from "../components/ui/page";
 
 export default function Page() {
     // As this page uses Server Side Rendering, the `session` will be already
@@ -11,21 +14,28 @@ export default function Page() {
     const loading = status === "loading";
 
     return (
-        <div>
-            <h1>Server Side Rendering</h1>
-            <p>
-                This page uses the universal <strong>getSession()</strong> method in{" "}
-                <strong>getServerSideProps()</strong>.
-            </p>
-            <p>
-                Using <strong>getSession()</strong> in <strong>getServerSideProps()</strong> is the recommended approach
-                if you need to support Server Side Rendering with authentication.
-            </p>
-            <p>The advantage of Server Side Rendering is this page does not require client side JavaScript.</p>
-            <p>The disadvantage of Server Side Rendering is that this page is slower to render.</p>
-        </div>
+        <UIPage>
+            <UIPage.Header title="Page Title">
+                <div className="prose prose-blue prose-sm my-6">
+                    <p>placeholder</p>
+                </div>
+            </UIPage.Header>
+            <UIPage.Body>
+                <UIPage.Section title="Page Section Title">
+                    <div className="prose prose-blue prose-sm">
+                        <p>placeholder</p>
+                    </div>
+                </UIPage.Section>
+            </UIPage.Body>
+        </UIPage>
     );
 }
+
+Page.getLayout = (page: ReactElement) => {
+    return getLayout(page, {
+        meta: { title: "Dashboard" },
+    });
+};
 
 export const getServerSideProps = withAuth(async (_ctx: GetServerSidePropsContext) => {
     return {
