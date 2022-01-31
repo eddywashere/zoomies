@@ -124,7 +124,7 @@ const getAllUserMeetings = async (licensedUsers: any[]) => {
 
     const meetings = await pMap(licensedUsers, getUserMeetings, { concurrency: 4 });
     //@ts-ignore
-    const flattenedMeetings = meetings.flat().sort((a, b) => b.start_date_time - a.start_date_time);
+    const flattenedMeetings = meetings.flat().sort((a, b) => a.start_date_time - b.start_date_time);
     try {
         redis.set("allUserMeetings", JSON.stringify(flattenedMeetings), "EX", 60 * 3); // 3 minute cache
     } catch (error) {
