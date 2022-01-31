@@ -3,6 +3,8 @@ import { GetServerSidePropsContext } from "next";
 import { useSession } from "next-auth/react";
 import Calendar from "../components/calendar";
 import pMap from "p-map";
+import addMinutes from "date-fns/addMinutes";
+import formatISO from "date-fns/formatISO";
 
 import withAuth from "../utils/with-auth";
 import { getLayout } from "../components/layout/dashboard";
@@ -27,6 +29,7 @@ export default function Page({ meetings }: any) {
     const initialEvents = meetings.map((m: any) => ({
         title: `${m.account}: ${m.topic}`,
         start: m.start_time,
+        end: m.end_time,
         duration: m.duration,
         meetingId: m.meetingId,
         topic: m.topic,
@@ -100,24 +103,28 @@ const getAllUserMeetings = async (licensedUsers: any[]) => {
     const getUserMeetings = async ({ id, first_name, last_name, pic_url }: any) => {
         const response = await zoom.meetings.ListMeetings(id, { type: "upcoming", page_size: 300 });
 
-        return response.meetings.map((m) => {
-            const { start_time, duration, agenda, topic } = m;
-            return {
-                start_time: start_time || null,
-                duration: duration || null,
-                agenda: agenda || "Agenda N/A",
-                topic: topic || "Untitled",
-                account: `${first_name} ${last_name}`,
-                avatar: pic_url,
-                meetingId: m.id,
-                meeting_type: m.type,
-            };
-        });
-        // todo: sort this first.
+        return response.meetings
+            .map((m) => {
+                const { start_time, duration, agenda, topic } = m;
+                return {
+                    start_date_time: start_time ? new Date(start_time).getTime() : null,
+                    start_time: start_time || null,
+                    end_time: !!start_time && !!duration ? formatISO(addMinutes(new Date(start_time), duration)) : null,
+                    duration: duration || null,
+                    agenda: agenda || "Agenda N/A",
+                    topic: topic || "Untitled",
+                    account: `${first_name} ${last_name}`,
+                    avatar: pic_url,
+                    meetingId: m.id,
+                    meeting_type: m.type,
+                };
+            })
+            .filter((a) => !!a.start_date_time);
     };
 
     const meetings = await pMap(licensedUsers, getUserMeetings, { concurrency: 4 });
-    const flattenedMeetings = meetings.flat();
+    //@ts-ignore
+    const flattenedMeetings = meetings.flat().sort((a, b) => b.start_date_time - a.start_date_time);
     try {
         redis.set("allUserMeetings", JSON.stringify(flattenedMeetings), "EX", 60 * 3); // 3 minute cache
     } catch (error) {
