@@ -2,13 +2,14 @@ import type { ReactElement } from "react";
 import { GetServerSidePropsContext } from "next";
 import { useSession } from "next-auth/react";
 import Calendar from "../components/calendar";
-import zoomApi from "zoomapi";
 import pMap from "p-map";
 
 import withAuth from "../utils/with-auth";
 import { getLayout } from "../components/layout/dashboard";
 import UIPage from "../components/ui/page";
 import toasty from "../components/toasty";
+import redis from "../utils/redis";
+import zoom from "../utils/zoom";
 
 export default function Page({ meetings }: any) {
     // As this page uses Server Side Rendering, the `session` will be already
@@ -69,16 +70,35 @@ Page.getLayout = (page: ReactElement) => {
     });
 };
 
-export const getServerSideProps = withAuth(async (_ctx: GetServerSidePropsContext) => {
-    const client = zoomApi({
-        apiKey: process.env.ZOOM_CLIENT_ID || "",
-        apiSecret: process.env.ZOOM_CLIENT_SECRET || "",
-    });
-    const response = await client.users.ListUsers();
+const getLicensedUsers = async () => {
+    let licensedUsersCache = await redis.get("licensedUsers");
+    if (licensedUsersCache) {
+        console.log("hit: licensedUsers");
+        return JSON.parse(licensedUsersCache);
+    }
+    console.log("miss: licensedUsers");
+
+    const response = await zoom.users.ListUsers();
     const licensedUsers = response.users.filter((u) => u.type === 2);
+    try {
+        redis.set("licensedUsers", JSON.stringify(licensedUsers), "EX", 60 * 60); // 1HR CACHE
+    } catch (error) {
+        console.error(error);
+    }
+
+    return licensedUsers;
+};
+
+const getAllUserMeetings = async (licensedUsers: any[]) => {
+    let allUserMeetings = await redis.get("allUserMeetings");
+    if (allUserMeetings) {
+        console.log("hit: allUserMeetings");
+        return JSON.parse(allUserMeetings);
+    }
+    console.log("miss: allUserMeetings");
 
     const getUserMeetings = async ({ id, first_name, last_name, pic_url }: any) => {
-        const response = await client.meetings.ListMeetings(id, { type: "upcoming", page_size: 300 });
+        const response = await zoom.meetings.ListMeetings(id, { type: "upcoming", page_size: 300 });
 
         return response.meetings.map((m) => {
             const { start_time, duration, agenda, topic } = m;
@@ -97,10 +117,24 @@ export const getServerSideProps = withAuth(async (_ctx: GetServerSidePropsContex
     };
 
     const meetings = await pMap(licensedUsers, getUserMeetings, { concurrency: 4 });
+    const flattenedMeetings = meetings.flat();
+    try {
+        redis.set("allUserMeetings", JSON.stringify(flattenedMeetings), "EX", 60 * 3); // 3 minute cache
+    } catch (error) {
+        console.error(error);
+    }
+
+    return flattenedMeetings;
+};
+
+export const getServerSideProps = withAuth(async (_ctx: GetServerSidePropsContext) => {
+    const licensedUsers = await getLicensedUsers();
+    const meetings = await getAllUserMeetings(licensedUsers);
+
     return {
         props: {
             users: licensedUsers,
-            meetings: meetings.flat(),
+            meetings: meetings,
         },
     };
 });
