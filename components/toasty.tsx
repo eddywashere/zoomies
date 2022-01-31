@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 
-const Toasty = ({ t, title, description }: any) => {
+const Toasty = ({ t, title, description, link }: any) => {
     return (
         <div
             className={`${
@@ -10,9 +10,10 @@ const Toasty = ({ t, title, description }: any) => {
                 <div className="flex items-start">
                     <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">{title}</p>
+                        <p className="mt-1 text-sm text-gray-500">{description}</p>
                         <p className="mt-1 text-sm text-gray-500">
-                            <a href={description} target="_blank">
-                                {description}
+                            <a href={link} target="_blank">
+                                {link}
                             </a>
                         </p>
                     </div>
@@ -29,8 +30,8 @@ const Toasty = ({ t, title, description }: any) => {
     );
 };
 
-const toasty = ({ title, description }: { title: string; description: string }) => {
-    toast.custom((t) => <Toasty t={t} title={title} description={description} />, { duration: Infinity });
+const toasty = ({ title, description, link }: { title: string; description: string; link: string }) => {
+    toast.custom((t) => <Toasty t={t} title={title} description={description} link={link} />, { duration: Infinity });
 };
 
 export default toasty;
