@@ -5,6 +5,8 @@ import Calendar from "../components/calendar";
 import pMap from "p-map";
 import addMinutes from "date-fns/addMinutes";
 import formatISO from "date-fns/formatISO";
+import endOfWeek from "date-fns/endOfWeek";
+import getHours from "date-fns/getHours";
 
 import withAuth from "../utils/with-auth";
 import { getLayout } from "../components/layout/dashboard";
@@ -13,29 +15,28 @@ import toasty from "../components/toasty";
 import redis from "../utils/redis";
 import zoom from "../utils/zoom";
 
-export default function Page({ meetings }: any) {
-    // As this page uses Server Side Rendering, the `session` will be already
-    // populated on render without needing to go through a loading stage.
-    // This is possible because of the shared context configured in `_app.js` that
-    // is used by `useSession()`.
-    const { data: session, status } = useSession();
-    const loading = status === "loading";
-    const colors = ["#b91c1c", "#4d7c0f", "#1e40af", "#d97706", "#6d28d9", "#db2777"];
-    const bgColorMap: any = {};
-    const getBackgroundColors = (account: string) => {
-        bgColorMap[account] = bgColorMap[account] || colors.shift();
-        return bgColorMap[account];
-    };
-    const initialEvents = meetings.map((m: any) => ({
-        title: `${m.account}: ${m.topic}`,
-        start: m.start_time,
-        end: m.end_time,
-        duration: m.duration,
-        meetingId: m.meetingId,
-        topic: m.topic,
-        account: m.account,
-        backgroundColor: getBackgroundColors(m.account),
-    }));
+export default function Page({ meetings, users }: any) {
+    let earliestStartingHour: number;
+    const eow = new Date(endOfWeek(new Date()));
+    const initialEvents = meetings.map((m: any) => {
+        let currentStartTime = new Date(m.start_time);
+        let currentStartHour = getHours(currentStartTime);
+        if (!earliestStartingHour) {
+            earliestStartingHour = currentStartHour;
+        } else if (currentStartTime <= eow && (currentStartHour > earliestStartingHour || !!earliestStartingHour)) {
+            earliestStartingHour = currentStartHour;
+        }
+        return {
+            title: `${m.account}: ${m.topic}`,
+            start: m.start_time,
+            end: m.end_time,
+            duration: m.duration,
+            meetingId: m.meetingId,
+            topic: m.topic,
+            account: m.account,
+            backgroundColor: m.backgroundColor,
+        };
+    });
 
     const toastify = (event: any) => {
         const title = event?.extendedProps?.account;
@@ -44,23 +45,22 @@ export default function Page({ meetings }: any) {
         return toasty({ title, description, link });
     };
 
-    // todo: find earliest meeting time during the week and set as scrollTime
-
     return (
         <UIPage>
             <UIPage.Body>
-                {/* @ts-ignore */}
                 <Calendar
-                    scrollTime="08:00:00"
+                    // @ts-ignore
+                    scrollTime={`${earliestStartingHour || 11}:00:00`}
                     scrollTimeReset={false}
                     slotEventOverlap={false}
+                    slotMinTime="08:00:00"
                     /* @ts-ignore */
-                    slotDuration="00:15:00"
                     initialEvents={initialEvents}
                     /* @ts-ignore */
                     defaultView="dayGridMonth"
                     eventClick={(data) => toastify(data.event)}
                     selectable
+                    height={600}
                 />
             </UIPage.Body>
         </UIPage>
@@ -81,8 +81,14 @@ const getLicensedUsers = async () => {
     }
     console.log("miss: licensedUsers");
 
+    const colors = ["#b91c1c", "#4d7c0f", "#1e40af", "#d97706", "#6d28d9", "#db2777"];
     const response = await zoom.users.ListUsers();
-    const licensedUsers = response.users.filter((u) => u.type === 2);
+    const licensedUsers = response.users
+        .filter((u) => u.type === 2)
+        .map((u) => ({
+            ...u,
+            backgroundColor: colors.shift() || "#cccccc",
+        }));
     try {
         redis.set("licensedUsers", JSON.stringify(licensedUsers), "EX", 60 * 60); // 1HR CACHE
     } catch (error) {
@@ -100,7 +106,7 @@ const getAllUserMeetings = async (licensedUsers: any[]) => {
     }
     console.log("miss: allUserMeetings");
 
-    const getUserMeetings = async ({ id, first_name, last_name, pic_url }: any) => {
+    const getUserMeetings = async ({ id, first_name, last_name, pic_url, backgroundColor }: any) => {
         const response = await zoom.meetings.ListMeetings(id, { type: "upcoming", page_size: 300 });
 
         return response.meetings
@@ -117,6 +123,7 @@ const getAllUserMeetings = async (licensedUsers: any[]) => {
                     avatar: pic_url,
                     meetingId: m.id,
                     meeting_type: m.type,
+                    backgroundColor,
                 };
             })
             .filter((a) => !!a.start_date_time);

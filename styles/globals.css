@@ -17,3 +17,7 @@ h6 {
 :root {
     --fc-small-font-size: 0.75em;
 }
+
+.fc table {
+    font-size: 0.9rem !important;
+}
