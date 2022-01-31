@@ -12,7 +12,7 @@ const Toasty = ({ t, title, description, link }: any) => {
                         <p className="text-sm font-medium text-gray-900">{title}</p>
                         <p className="mt-1 text-sm text-gray-500">{description}</p>
                         <p className="mt-1 text-sm text-gray-500">
-                            <a href={link} target="_blank">
+                            <a href={link} target="_blank" rel="noreferrer">
                                 {link}
                             </a>
                         </p>
