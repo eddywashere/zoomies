@@ -1,6 +1,8 @@
 import FullCalendar, { type CalendarOptions } from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import listPlugin from "@fullcalendar/list";
 import { useRef } from "react";
 
 const Calendar = (props: CalendarOptions) => {
@@ -10,7 +12,7 @@ const Calendar = (props: CalendarOptions) => {
         <FullCalendar
             //@ts-ignore
             innerRef={calendarRef}
-            plugins={[timeGridPlugin, interactionPlugin]}
+            plugins={[dayGridPlugin, listPlugin, timeGridPlugin, interactionPlugin]}
             initialEvents={[{ title: "nice event", start: new Date(), resourceId: "a" }]}
             {...props}
         />

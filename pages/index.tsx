@@ -54,13 +54,17 @@ export default function Page({ meetings, users }: any) {
                     scrollTimeReset={false}
                     slotEventOverlap={false}
                     slotMinTime="08:00:00"
-                    /* @ts-ignore */
                     initialEvents={initialEvents}
-                    /* @ts-ignore */
-                    defaultView="dayGridMonth"
+                    initialView="listYear"
                     eventClick={(data) => toastify(data.event)}
                     selectable
                     height={600}
+                    headerToolbar={{
+                        left: "prev,next today",
+                        center: "title",
+                        right: "timeGridWeek,dayGridMonth listYear",
+                    }}
+                    buttonText={{ listYear: "Event List", month: "Month", week: "Week", today: "Today" }}
                 />
             </UIPage.Body>
         </UIPage>
