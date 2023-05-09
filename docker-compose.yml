@@ -1,0 +1,41 @@
+version: '3.9'
+
+x-common-props: &common-props
+  build:
+    context: ./
+    target: deps
+  working_dir: /app
+  volumes:
+    - ./:/app
+    - /app/node_modules 
+
+services:
+  shell:
+    build:
+      context: ./
+      target: base
+    working_dir: /app
+    volumes:
+      - ./:/app
+    profiles: ["shell"]
+    command: echo "default shell"
+  server:
+    <<: *common-props
+    ports:
+      - '3000:3000'
+    command: yarn dev
+    env_file:
+      - ./.env.local
+      - ./.env
+    depends_on:
+      - redis
+    networks:
+      - zoomredis
+  redis:
+    container_name: zoomredis
+    image: redis
+    restart: always
+    networks:
+      - zoomredis
+networks:
+  zoomredis:
