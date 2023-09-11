@@ -1,0 +1,7 @@
+{
+	"name": "Zoomies",
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye",
+	"features": {
+		"ghcr.io/itsmechlark/features/redis-server:1": {}
+	}
+}
